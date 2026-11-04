@@ -21,8 +21,7 @@ jobs:
           python-version: "3.12"
       - run: pip install pillow && python build.py
         env:
-          # optional CARD_TOKEN (classic PAT, repo scope) makes the commit count include private repos
-          GH_TOKEN: ${{ secrets.CARD_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # public contributions only
       - name: Commit if changed
         run: |
           git config user.name "github-actions[bot]"

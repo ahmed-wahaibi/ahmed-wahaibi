@@ -33,11 +33,6 @@ INFO = [  # (key, value); None = section header
 ]
 QUOTE = ["// Every bug is a feature", "// that hasn't told its joke yet."]
 
-ORG = "rihal-om"
-# Old account wahaibi0's work in ORG. Frozen forever: the new account's work, ORG included, counts as personal.
-# Source: code-rihal/rihal-om-contributor-stats.md (GitHub API, 2026-11-02, default branches only).
-HISTORY = {"repos": 28, "commits": 1271, "add": 1743112, "del": 674330}
-
 WIDTH = 60  # right column, in characters
 BG, FG, DIM, KEY, VAL = "#161b22", "#c9d1d9", "#616e7f", "#d2a8ff", "#7ee787"
 ADD, DEL = "#3fb950", "#f85149"
@@ -170,7 +165,7 @@ def loc(owner, repo):
 
 
 def stats():
-    """Live numbers for USER's whole account; the ORG section is the frozen HISTORY."""
+    """Live numbers for USER's whole account (public contributions with the workflow's token)."""
     # shortcut: first 100 owned repos only, paginate if the account ever passes that
     u = gql("""query($l:String!){user(login:$l){createdAt followers{totalCount}
       repositories(ownerAffiliations:OWNER,isFork:false,first:100){totalCount nodes{name stargazerCount}}}}""",
@@ -182,13 +177,10 @@ def stats():
                        l=USER, f="%d-01-01T00:00:00Z" % year, t="%d-12-31T23:59:59Z" % year,
                        )["contributionsCollection"]["totalCommitContributions"]
     mine = [loc(USER, r["name"]) for r in u["repositories"]["nodes"]]
-    return {
-        "personal": {"repos": u["repositories"]["totalCount"],
-                     "stars": sum(r["stargazerCount"] for r in u["repositories"]["nodes"]),
-                     "followers": u["followers"]["totalCount"], "commits": commits,
-                     "add": sum(a for a, _ in mine), "del": sum(d for _, d in mine)},
-        "org": HISTORY,
-    }
+    return {"repos": u["repositories"]["totalCount"],
+            "stars": sum(r["stargazerCount"] for r in u["repositories"]["nodes"]),
+            "followers": u["followers"]["totalCount"], "commits": commits,
+            "add": sum(a for a, _ in mine), "del": sum(d for _, d in mine)}
 
 
 # ---------------------------------------------------------------- layout
@@ -218,14 +210,10 @@ def right_column(s):
     lines = [[(head, FG), ("—" * (WIDTH - len(head) - 3) + "-—-", DIM)]]
     for key, value in INFO:
         lines.append(header(value) if key is None else field(key, value, WIDTH))
-    p, o = s["personal"], s["org"]
     lines += [header("Personal"),
-              pair("Repos", str(p["repos"]), "Stars", str(p["stars"])),
-              pair("Commits", "{:,}".format(p["commits"]), "Followers", str(p["followers"])),
-              loc_line(p),
-              header(ORG),
-              pair("Repos", str(o["repos"]), "Commits", "{:,}".format(o["commits"])),
-              loc_line(o),
+              pair("Repos", str(s["repos"]), "Stars", str(s["stars"])),
+              pair("Commits", "{:,}".format(s["commits"]), "Followers", str(s["followers"])),
+              loc_line(s),
               header("")[1:]]
     lines += [[(q.rjust(WIDTH), DIM)] for q in QUOTE]
     return lines
